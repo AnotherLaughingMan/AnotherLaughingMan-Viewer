@@ -4,41 +4,59 @@
   <img alt="Second Life Logo" src="doc/sl-logo.png">
 </picture>
 
-**[Second Life][] is a free 3D virtual world where users can create, connect and chat with others from around the
-world.** This repository contains the source code for the official client.
+# AnotherLaughingMan-Viewer
+
+**[Second Life][] is a free 3D virtual world where users can create, connect, and collaborate.**  
+This repository is a fork of the official Second Life Viewer, maintained by AnotherLaughingMan for testing, customization, and development purposes.
+
+---
+
+## Purpose
+
+This fork is intended to:
+- Experiment with viewer modifications and new features.
+- Maintain a personal development branch separate from Linden Lab’s official viewer.
+- Provide a space for testing builds and documenting changes.
+
+---
 
 ## Open Source
 
-Second Life provides a huge variety of tools for expression, content creation, socialization and play. Its vibrancy is
-only possible because of input and contributions from its residents. The client codebase has been open source since
-2007 and is available under the LGPL license. The [Open Source Portal][] contains additional information about Linden
-Lab's open source history and projects.
+The Second Life Viewer has been open source since 2007 under the LGPL license.  
+This fork follows the same license terms. See the [Open Source Portal][] for Linden Lab’s history, and the [CONTRIBUTING][] guide for collaboration details.
+
+---
 
 ## Download
 
-Most people use a pre-built viewer release to access Second Life. Windows and macOS builds are
-[published on the official website][download]. More experimental viewers, such as release candidates and
-project viewers, are detailed on the [Alternate Viewers page](https://releasenotes.secondlife.com/viewer.html).
+For stable releases, use the [official viewer][download].  
+This fork may produce experimental builds that are not part of Linden Lab’s release cycle.  
+Linux-compatible builds and other third-party viewers are indexed in the [Third Party Viewer Directory][tpv].
 
-### Third Party Viewers
-
-Third party maintained forks, which include Linux compatible builds, are indexed in the [Third Party Viewer Directory][tpv].
+---
 
 ## Build Instructions
 
-[Windows](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_Windows)
+Follow the official guides for your platform:
 
-[Mac](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_macOS)
+- [Windows](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_Windows)  
+- [Mac](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_macOS)  
+- [Linux](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_Linux)
 
-[Linux](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_Linux)
+---
 
 ## Contribute
 
-Help make Second Life better! You can get involved with improvements by filing bugs, suggesting enhancements, submitting
-pull requests and more. See the [CONTRIBUTING][] and the [open source portal][] for details.
+This fork is primarily for personal development, but contributions are welcome.  
+You can:
+- File issues related to this fork’s changes.
+- Suggest enhancements or improvements.
+- Submit pull requests for experimental features.
 
-[Second Life]: https://secondlife.com/
-[download]: https://secondlife.com/support/downloads/
-[tpv]: http://wiki.secondlife.com/wiki/Third_Party_Viewer_Directory
-[open source portal]: http://wiki.secondlife.com/wiki/Open_Source_Portal
+---
+
+[Second Life]: https://secondlife.com/  
+[download]: https://secondlife.com/support/downloads/  
+[tpv]: http://wiki.secondlife.com/wiki/Third_Party_Viewer_Directory  
+[open source portal]: http://wiki.secondlife.com/wiki/Open_Source_Portal  
 [contributing]: https://github.com/secondlife/viewer/blob/main/CONTRIBUTING.md
