@@ -166,10 +166,10 @@ LLFloaterTexturePicker::LLFloaterTexturePicker(
     mBlankImageAssetID(blank_image_asset_id),
     mAllowNoTexture(allow_no_texture),
     mLabel(label),
-    mTentativeLabel(NULL),
-    mResolutionLabel(NULL),
+    mTentativeLabel(nullptr),
+    mResolutionLabel(nullptr),
     mActive( true ),
-    mFilterEdit(NULL),
+    mFilterEdit(nullptr),
     mImmediateFilterPermMask(immediate_filter_perm_mask),
     mDnDFilterPermMask(dnd_filter_perm_mask),
     mContextConeOpacity(0.f),
@@ -180,10 +180,10 @@ LLFloaterTexturePicker::LLFloaterTexturePicker(
     mMaxDim(S32_MAX),
     mMinDim(0),
     mPreviewSettingChanged(false),
-    mOnFloaterCommitCallback(NULL),
-    mOnFloaterCloseCallback(NULL),
-    mSetImageAssetIDCallback(NULL),
-    mOnUpdateImageStatsCallback(NULL),
+    mOnFloaterCommitCallback(nullptr),
+    mOnFloaterCloseCallback(nullptr),
+    mSetImageAssetIDCallback(nullptr),
+    mOnUpdateImageStatsCallback(nullptr),
     mBakeTextureEnabled(false),
     mLocalTextureEnabled(false),
     mNoCopyTextureSelected(false),
@@ -285,7 +285,7 @@ void LLFloaterTexturePicker::setImageIDFromItem(const LLInventoryItem* itemp, bo
 
 void LLFloaterTexturePicker::setActive( bool active )
 {
-    if (!active && getChild<LLUICtrl>("Pipette")->getValue().asBoolean())
+    if (!active && mPipetteBtn->getValue().asBoolean())
     {
         stopUsingPipette();
     }
@@ -658,7 +658,10 @@ bool LLFloaterTexturePicker::postBuild()
 
     mSavedFolderState.setApply(false);
 
-    LLToolPipette::getInstance()->setToolSelectCallback(boost::bind(&LLFloaterTexturePicker::onTextureSelect, this, _1));
+    mPipetteConnection = LLToolPipette::getInstance()->setToolSelectCallback([this](LLPointer<LLViewerObject> object, S32 te_index)
+    {
+        onPipetteSelect(object, te_index);
+    });
 
     getChild<LLComboBox>("l_bake_use_texture_combo_box")->setCommitCallback(onBakeTextureSelect, this);
 
@@ -1069,7 +1072,7 @@ void LLFloaterTexturePicker::onBtnSelect(void* userdata)
 
 void LLFloaterTexturePicker::onBtnPipette()
 {
-    bool pipette_active = getChild<LLUICtrl>("Pipette")->getValue().asBoolean();
+    bool pipette_active = mPipetteBtn->getValue().asBoolean();
     pipette_active = !pipette_active;
     if (pipette_active)
     {
@@ -1090,7 +1093,7 @@ void LLFloaterTexturePicker::onSelectionChange(const std::deque<LLFolderViewItem
         mNoCopyTextureSelected = false;
         if (itemp)
         {
-            if (!mTextureSelectedCallback.empty())
+            if (mTextureSelectedCallback != nullptr)
             {
                 mTextureSelectedCallback(itemp);
             }
@@ -1419,8 +1422,7 @@ void LLFloaterTexturePicker::changeMode()
     getChild<LLComboBox>("l_bake_use_texture_combo_box")->setVisible(index == PICKER_BAKE);
     getChild<LLCheckBoxCtrl>("hide_base_mesh_region")->setVisible(false);// index == 2);
 
-    bool pipette_visible = (index == PICKER_INVENTORY)
-        && (mInventoryPickType != PICK_MATERIAL);
+    bool pipette_visible = (index == PICKER_INVENTORY);
     mPipetteBtn->setVisible(pipette_visible);
 
     if (index == PICKER_BAKE)
@@ -1560,15 +1562,8 @@ void LLFloaterTexturePicker::setInventoryPickType(EPickInventoryType type)
     refreshLocalList();
     refreshInventoryFilter();
 
-    if (mInventoryPickType == PICK_MATERIAL)
-    {
-        getChild<LLButton>("Pipette")->setVisible(false);
-    }
-    else
-    {
-        S32 index = mModeSelector->getValue().asInteger();
-        getChild<LLButton>("Pipette")->setVisible(index == 0);
-    }
+    S32 index = mModeSelector->getValue().asInteger();
+    mPipetteBtn->setVisible(index == 0);
 
     if (!mLabel.empty())
     {
@@ -1640,39 +1635,88 @@ void LLFloaterTexturePicker::onPickerCallback(const std::vector<std::string>& fi
     }
 }
 
-void LLFloaterTexturePicker::onTextureSelect( const LLTextureEntry& te )
+void LLFloaterTexturePicker::onPipetteSelect(LLPointer<LLViewerObject>& object, S32 te_index)
 {
-    LLUUID inventory_item_id = findItemID(te.getID(), true);
-    if (inventory_item_id.notNull())
+    if (mInventoryPickType == PICK_MATERIAL)
     {
-        LLToolPipette::getInstance()->setResult(true, "");
-        if (mInventoryPickType == PICK_MATERIAL)
+        // Note: does not copy overrides!
+        LLUUID mat_id = object->getRenderMaterialID(te_index);
+        if (mat_id == BLANK_MATERIAL_ASSET_ID)
         {
-            // tes have no data about material ids
-            // Plus gltf materials are layered with overrides,
-            // which mean that end result might have no id.
-            LL_WARNS() << "tes have no data about material ids" << LL_ENDL;
+            // It's fine if blank material isn't in inventory, just set it
+            LLToolPipette::getInstance()->setResult(true, "");
+            setImageID(mat_id);
+            setTentative(false);
+
+            mNoCopyTextureSelected = false;
+
+            commitIfImmediateSet();
+        }
+        else if (mat_id.isNull())
+        {
+            LLToolPipette::getInstance()->setResult(false, LLTrans::getString("InventoryNoMaterial"));
         }
         else
         {
-            setImageID(te.getID());
-            setTentative(false);
+            LLUUID inventory_item_id = findItemID(mat_id, true);
+            if (inventory_item_id.notNull())
+            {
+                LLToolPipette::getInstance()->setResult(true, "");
+                setImageID(mat_id);
+                setTentative(false);
+
+                mNoCopyTextureSelected = false;
+                LLInventoryItem* itemp = gInventory.getItem(inventory_item_id);
+
+                if (itemp && !itemp->getPermissions().allowCopyBy(gAgent.getID()))
+                {
+                    // no copy texture
+                    mNoCopyTextureSelected = true;
+                }
+
+                commitIfImmediateSet();
+            }
+            else
+            {
+                // Not in inventory, can't apply
+                LLToolPipette::getInstance()->setResult(false, LLTrans::getString("InventoryNoMaterial"));
+            }
         }
-
-        mNoCopyTextureSelected = false;
-        LLInventoryItem* itemp = gInventory.getItem(inventory_item_id);
-
-        if (itemp && !itemp->getPermissions().allowCopyBy(gAgent.getID()))
-        {
-            // no copy texture
-            mNoCopyTextureSelected = true;
-        }
-
-        commitIfImmediateSet();
     }
     else
     {
-        LLToolPipette::getInstance()->setResult(false, LLTrans::getString("InventoryNoTexture"));
+        const LLTextureEntry* entry = object->getTE(te_index);
+        if (!entry)
+        {
+            // Whatever was selected is not a face/TE,
+            // no texture to check, so do nothing.
+            // Should not be reachable, if you hit this,
+            // check what happens in pipette tool.
+            llassert(false);
+            return;
+        }
+        LLUUID inventory_item_id = findItemID(entry->getID(), true);
+        if (inventory_item_id.notNull())
+        {
+            LLToolPipette::getInstance()->setResult(true, "");
+            setImageID(entry->getID());
+            setTentative(false);
+
+            mNoCopyTextureSelected = false;
+            LLInventoryItem* itemp = gInventory.getItem(inventory_item_id);
+
+            if (itemp && !itemp->getPermissions().allowCopyBy(gAgent.getID()))
+            {
+                // no copy texture
+                mNoCopyTextureSelected = true;
+            }
+
+            commitIfImmediateSet();
+        }
+        else
+        {
+            LLToolPipette::getInstance()->setResult(false, LLTrans::getString("InventoryNoTexture"));
+        }
     }
 }
 
@@ -1683,11 +1727,11 @@ static LLDefaultChildRegistry::Register<LLTextureCtrl> r("texture_picker");
 
 LLTextureCtrl::LLTextureCtrl(const LLTextureCtrl::Params& p)
 :   LLUICtrl(p),
-    mDragCallback(NULL),
-    mDropCallback(NULL),
-    mOnCancelCallback(NULL),
-    mOnCloseCallback(NULL),
-    mOnSelectCallback(NULL),
+    mDragCallback(nullptr),
+    mDropCallback(nullptr),
+    mOnCancelCallback(nullptr),
+    mOnCloseCallback(nullptr),
+    mOnSelectCallback(nullptr),
     mBorderColor( p.border_color() ),
     mAllowNoTexture( p.allow_no_texture ),
     mAllowLocalTexture( true ),

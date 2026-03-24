@@ -50,8 +50,8 @@ class LLViewerFetchedTexture;
 class LLFetchedGLTFMaterial;
 
 // used for setting drag & drop callbacks.
-typedef boost::function<bool (LLUICtrl*, LLInventoryItem*)> drag_n_drop_callback;
-typedef boost::function<void (LLInventoryItem*)> texture_selected_callback;
+typedef std::function<bool (LLUICtrl*, LLInventoryItem*)> drag_n_drop_callback;
+typedef std::function<void (LLInventoryItem*)> texture_selected_callback;
 
 // Helper functions for UI that work with picker
 bool get_is_predefined_texture(LLUUID asset_id);
@@ -299,10 +299,10 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // LLFloaterTexturePicker
-typedef boost::function<void(LLTextureCtrl::ETexturePickOp op, LLPickerSource source, const LLUUID& asset_id, const LLUUID& inventory_id, const LLUUID& tracking_id)> floater_commit_callback;
-typedef boost::function<void()> floater_close_callback;
-typedef boost::function<void(const LLUUID& asset_id)> set_image_asset_id_callback;
-typedef boost::function<void(LLPointer<LLViewerTexture> texture)> set_on_update_image_stats_callback;
+typedef std::function<void(LLTextureCtrl::ETexturePickOp op, LLPickerSource source, const LLUUID& asset_id, const LLUUID& inventory_id, const LLUUID& tracking_id)> floater_commit_callback;
+typedef std::function<void()> floater_close_callback;
+typedef std::function<void(const LLUUID& asset_id)> set_image_asset_id_callback;
+typedef std::function<void(LLPointer<LLViewerTexture> texture)> set_on_update_image_stats_callback;
 
 class LLFloaterTexturePicker : public LLFloater
 {
@@ -374,7 +374,7 @@ public:
     static void     onBtnNone(void* userdata);
     void            onSelectionChange(const std::deque<LLFolderViewItem*> &items, bool user_action);
     static void     onApplyImmediateCheck(LLUICtrl* ctrl, void* userdata);
-    void            onTextureSelect(const LLTextureEntry& te);
+    void            onPipetteSelect(LLPointer<LLViewerObject>& object, S32 te_index);
 
     static void     onModeSelect(LLUICtrl* ctrl, void *userdata);
     static void     onBtnAdd(void* userdata);
@@ -456,6 +456,8 @@ private:
     floater_commit_callback mOnFloaterCommitCallback;
     set_image_asset_id_callback mSetImageAssetIDCallback;
     set_on_update_image_stats_callback mOnUpdateImageStatsCallback;
+
+    boost::signals2::scoped_connection  mPipetteConnection;
 
     bool mBakeTextureEnabled;
     bool mLocalTextureEnabled;

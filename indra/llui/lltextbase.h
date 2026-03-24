@@ -259,6 +259,7 @@ public:
     /*virtual*/ void        updateLayout(const class LLTextBase& editor);
     /*virtual*/ F32         draw(S32 start, S32 end, S32 selection_start, S32 selection_end, const LLRectf& draw_rect);
     /*virtual*/ bool        canEdit() const { return false; }
+    /*virtual*/ bool        getPermitsEmoji() const { return false; }
     /*virtual*/ void        unlinkFromDocument(class LLTextBase* editor);
     /*virtual*/ void        linkToDocument(class LLTextBase* editor);
 
@@ -760,6 +761,7 @@ protected:
     bool                        mUseEmoji;
     bool                        mUseColor;
     bool                        mTrackEnd;          // if true, keeps scroll position at end of document during resize
+    bool                        mTrackValueChange;  // if true, send out onValueChange() from low level text modification methods
     bool                        mReadOnly;
     bool                        mBGVisible;         // render background?
     bool                        mClip;              // clip text to widget rect
